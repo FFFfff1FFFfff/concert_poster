@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Cover, Designs } from '../components/Posters';
 import { buildPrompt, demoAssets, makeSlot, newProject, slug, validateProject } from '../lib/project.mjs';
+import { harryAssets, harrySample } from '../lib/harry-sample.mjs';
 
 const DRAFT_KEY = 'flikx-concert-draft-v1';
 async function api(url, options) {
@@ -35,7 +36,7 @@ function Preview({ children, label, title, posterRef, onDownload, busy }) {
 
 export default function Studio() {
   const [project, setProject] = useState(newProject);
-  const [assets, setAssets] = useState(demoAssets);
+  const [assets, setAssets] = useState([...demoAssets, ...harryAssets]);
   const [projects, setProjects] = useState([]);
   const [ready, setReady] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -55,8 +56,8 @@ export default function Studio() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(DRAFT_KEY);
-      if (saved) { setProject(validateProject(JSON.parse(saved))); setDirty(true); }
+      if (new URLSearchParams(window.location.search).get('sample') === 'harry') { setProject(harrySample()); setDirty(true); }
+      else { const saved = localStorage.getItem(DRAFT_KEY); if (saved) { setProject(validateProject(JSON.parse(saved))); setDirty(true); } }
     } catch { setError('The previous draft could not be restored. Saved projects are still available.'); }
     Promise.all([api('/api/assets'), api('/api/projects')]).then(([library, saved]) => {
       setAssets(library.assets); setAiEnabled(library.aiEnabled); setEventsEnabled(library.eventsEnabled); setProjects(saved);
@@ -108,8 +109,8 @@ export default function Studio() {
   }
   function openProject(value) {
     if (dirty && !window.confirm('Open another project? Save first to keep this draft as a project.')) return;
-    const next = value === 'new' ? newProject() : projects.find(item => item.id === value);
-    if (next) { setProject(next); setDirty(value === 'new'); setSelected(''); setStatus(''); }
+    const next = value === 'new' ? newProject() : value === 'harry' ? harrySample() : projects.find(item => item.id === value);
+    if (next) { setProject(next); setDirty(value === 'new' || value === 'harry'); setSelected(''); setStatus(value === 'harry' ? 'Harry Styles sample loaded. Every motif remains downloadable as an original PNG.' : ''); }
   }
   async function posterBlob(ref) {
     await document.fonts.ready;
@@ -153,7 +154,8 @@ export default function Studio() {
   }
   function arrange(layout) {
     const count = project.designs.length; const rows = Math.ceil(count / 3); const gap = rows > 3 ? 119 : 149;
-    update({ layout, designs: project.designs.map((slot, index) => ({ ...slot, x: 90 + index % 3 * 180 + (layout === 'collage' ? [0, -10, 2, 10, 0, -10][index % 6] : 0), y: 210 + Math.floor(index / 3) * gap, size: rows > 3 ? 100 : layout === 'collage' ? [112, 136, 108, 125, 110, 135][index % 6] : 124, rotation: layout === 'collage' ? [-7, 4, -4, 4, -5, 4][index % 6] : 0 })) });
+    const mix = [[92,224,112,-8],[268,219,140,3],[449,228,105,8],[122,365,135,-4],[312,349,116,5],[460,380,130,-7],[91,526,126,5],[272,512,138,-4],[445,522,122,7],[90,594,76,-5],[270,588,84,4],[450,596,74,-3]];
+    update({ layout, designs: project.designs.map((slot, index) => layout === 'collage' ? { ...slot, x: mix[index][0], y: mix[index][1], size: mix[index][2], rotation: mix[index][3] } : { ...slot, x: 90 + index % 3 * 180, y: 210 + Math.floor(index / 3) * gap, size: rows > 3 ? 100 : 124, rotation: 0 }) });
   }
   const selectedSlot = project.designs.find(slot => slot.id === selected);
   const selectedAsset = assets.find(asset => asset.id === selectedSlot?.assetId);
@@ -162,7 +164,7 @@ export default function Studio() {
   return <main>
     <header className="app-header"><a className="brand" href="/">FLIKX<span>CONCERT STUDIO</span></a><div className="header-right"><span className="market"><i /> US EDITION</span><span className="version">V.01</span></div></header>
     <div className="workspace-heading"><div><div className="eyebrow">FROM THE FRONT ROW TO YOUR FEED</div><h1>Your next concert story.</h1><p>One artist. Two slides. A little more you.</p></div><div className="primary-actions"><button disabled={!!busy || !ready} onClick={save}><Icon name="save" />Save project</button><button className="primary" disabled={!!busy || !ready} onClick={exportKit}><Icon name="download" />{busy === 'Exporting' ? 'Exporting…' : 'Export poster kit'}</button></div></div>
-    <div className="project-toolbar"><div><span className={`save-dot ${dirty ? 'dirty' : ''}`} />{dirty ? 'Draft · changes not saved' : project.id ? 'Saved project' : 'New project'}</div><div><select aria-label="Open saved project" value={projects.some(item => item.id === project.id) ? project.id : ''} onChange={event => openProject(event.target.value)}><option value="" disabled>Open a saved project</option>{projects.map(item => <option key={item.id} value={item.id}>{item.artist} · {item.city}</option>)}</select><button className="text-button" disabled={!!busy} onClick={() => { update({ id: '' }); setStatus('Copy created. Edit it, then save as a new project.'); }}><Icon name="copy" size={15} />Duplicate</button><button className="text-button" disabled={!!busy} onClick={() => openProject('new')}><Icon name="plus" size={15} />New</button></div></div>
+    <div className="project-toolbar"><div><span className={`save-dot ${dirty ? 'dirty' : ''}`} />{dirty ? 'Draft · changes not saved' : project.id ? 'Saved project' : 'New project'}</div><div><select aria-label="Open saved project" value={projects.some(item => item.id === project.id) ? project.id : ''} onChange={event => openProject(event.target.value)}><option value="" disabled>Open a saved project</option>{projects.map(item => <option key={item.id} value={item.id}>{item.artist} · {item.city}</option>)}</select><button className="text-button" disabled={!!busy} onClick={() => openProject('harry')}><Icon name="spark" size={15} />Harry sample</button><button className="text-button" disabled={!!busy} onClick={() => { update({ id: '' }); setStatus('Copy created. Edit it, then save as a new project.'); }}><Icon name="copy" size={15} />Duplicate</button><button className="text-button" disabled={!!busy} onClick={() => openProject('new')}><Icon name="plus" size={15} />New</button></div></div>
     {(error || status || busy) && <div className={`notice ${error ? 'error' : ''}`} role={error ? 'alert' : 'status'}>{error || (busy ? `${busy}…` : status)}<button aria-label="Dismiss message" onClick={() => { setError(''); setStatus(''); }}>×</button></div>}
     <div className="workspace">
       <aside className="editor-panel"><div className="panel-tabs" role="tablist" aria-label="Editor sections">{[['details', '01', 'Concert'], ['designs', '02', 'Designs']].map(([id, number, label]) => <button role="tab" aria-selected={tab === id} key={id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)}><span>{number}</span>{label}</button>)}</div>

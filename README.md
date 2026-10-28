@@ -23,6 +23,16 @@ Open http://127.0.0.1:3100. No API keys are required to upload assets, edit, sav
 
 Uploaded/generated assets are saved immediately under `data/assets/`. PNG uploads and API-generated PNGs are stored byte-for-byte without resizing, poster text, or numbering. JPEG/WebP uploads are converted to PNG. Removing a design from a poster does not delete its original. Projects live under `data/projects/`. Back up `data/` to move the full library and saved projects to another machine. Export ZIPs are portable asset/config backups; ZIP import is not implemented yet.
 
+## Harry Styles sample
+
+Click **Harry sample** in the project toolbar to load the English US example. The nine hand-drawn transparent originals live in `public/assets/harry-styles/`; the finished 1080 × 1440 slides are in `output/harry-styles/`.
+
+Rebuild the two sample PNGs with:
+
+```bash
+node scripts/render-harry-sample.mjs
+```
+
 ## Optional connections
 
 Copy `.env.example` to `.env.local`, set the keys you need, and restart the dev server. Do not commit keys.

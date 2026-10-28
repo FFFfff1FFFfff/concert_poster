@@ -1,12 +1,13 @@
 import path from 'node:path';
 import { DATA, listJSON, saveAsset, localRequest, errorResponse } from '../../../lib/storage.mjs';
 import { demoAssets } from '../../../lib/project.mjs';
+import { harryAssets } from '../../../lib/harry-sample.mjs';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const assets = await listJSON(path.join(DATA, 'assets'));
-  return Response.json({ assets: [...demoAssets, ...assets.sort((a, b) => a.createdAt.localeCompare(b.createdAt))], aiEnabled: Boolean(process.env.OPENAI_API_KEY), eventsEnabled: Boolean(process.env.TICKETMASTER_API_KEY) });
+  return Response.json({ assets: [...demoAssets, ...harryAssets, ...assets.sort((a, b) => a.createdAt.localeCompare(b.createdAt))], aiEnabled: Boolean(process.env.OPENAI_API_KEY), eventsEnabled: Boolean(process.env.TICKETMASTER_API_KEY) });
 }
 
 export async function POST(request) {

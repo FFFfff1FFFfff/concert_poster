@@ -31,4 +31,6 @@ test('generated motifs are requested separately from poster lettering', () => {
   assert.match(prompt, /ONE original/);
   assert.match(prompt, /transparent/);
   assert.match(prompt, /No sheet, collage, typography, numbering/);
+  assert.match(prompt, /human asymmetry/);
+  assert.match(prompt, /Avoid vector-perfect geometry/);
 });
